@@ -12,7 +12,7 @@ Would extract each line in infile, using schema.json and write extracted data to
 
 ## Setup
 
-This repo depends on a [forked][wrapper-fork] version of [ChatGPT-wrapper][wrapper-main], which is included as a submodule of this repo:
+This repo depends on [ChatGPT-wrapper][wrapper-main], which is included as a submodule of this repo. Clone this repo like:
 
 ```
 git clone --recurse-submodules https://github.com/brandonrobertz/chatgpt-document-extraction
@@ -94,9 +94,6 @@ It can be helpful to name the fields in descriptive ways that ChatGPT can use to
 
 [wrapper-main]: https://github.com/mmabrouk/chatgpt-wrapper
     "ChatGPT Wrapper - upstream version"
-
-[wrapper-fork]: https://github.com/brandonrobertz/chatgpt-wrapper
-    "ChatGPT Wrapper - forked version with modifications"
 
 [playwright-setup]: https://playwright.dev/python/docs/library
     "Playwright - Getting Started"
