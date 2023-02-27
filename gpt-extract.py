@@ -3,23 +3,12 @@
 Generic ChatGPT extraction script. Converts any input data to
 any output JSON, as specified by a given JSON schema document.
 
-I'm using a forked version of chatgpt-wrapper that explodes when things
-timeout. I'm also exploding the script here when the AI fails to return
-the entire JSON response. For some reason, ChatGPT will get into moods
-where it stops outputting in the middle of a response and it will do
-that over and over. So it's best to start over when this happens.
+This is dependent on the ChatGPT wrapper library:
 
-My Fork: https://github.com/brandonrobertz/chatgpt-wrapper
-Upstream: https://github.com/mmabrouk/chatgpt-wrapper
+https://github.com/mmabrouk/chatgpt-wrapper
 
-Using my fork, run gpt-extract like this:
-
-while true; do python gpt-extract.py && break; echo Sleeping then retrying; sleep 60; done
-
-Then the script can break out of failure modes and timeouts and start
-over clean. Playwright will remember your session so you won't need to
-log back in. The above will also stop looping once the script successfully
-completes.
+Make sure to also run playwright install before running
+this extractor script!
 """
 import argparse
 from datetime import datetime
@@ -29,7 +18,7 @@ import re
 import sys
 import time
 
-from chatgpt_wrapper import ChatGPT, TimeoutException
+from chatgpt_wrapper import ChatGPT
 
 
 # max chars to use in prompt
@@ -56,6 +45,11 @@ parser.add_argument(
     help='Hide the browser'
 )
 parser.add_argument(
+    '--login', 
+    action='store_true',
+    help='Wait for us to login manually. You need to run this the first time'
+)
+parser.add_argument(
     '--continue-at',
     help='Continue extration at this document index'
 )
@@ -63,6 +57,11 @@ parser.add_argument(
     '--continue-last',
     action='store_true',
     help='Continue extration at the last document extracted'
+)
+parser.add_argument(
+    '--browser',
+    default="firefox",
+    help='Choose a browser to use. Needs to already be installed with `playwright install`. Defaults to firefox.'
 )
 parser.add_argument(
     'infile',
@@ -77,9 +76,6 @@ parser.add_argument(
     help='Path to output results JSON file'
 )
 
-
-class BadStateException(Exception):
-    pass
 
 
 def clean_document(page_text):
@@ -112,7 +108,8 @@ def scrape_via_prompt(chat, page_text, schema):
         waited += 1
 
         if waited > 5:
-            raise BadStateException("Exceeded 5 wait states, starting over.")
+            print("Timed out on this prompt")
+            break
 
         if "unusable response produced by chatgpt" in response.lower():
             wait_seconds = 120 * waited
@@ -128,17 +125,18 @@ def scrape_via_prompt(chat, page_text, schema):
         if bad_input in response.lower():
             response = None
             print("Bad input! Skipping this text")
-            break
+            continue
 
         if response.strip() == "HTTP Error 429: Too many requests":
             # sleep for one hour
             print("Sleeping for one hour due to rate limiting...")
             time.sleep(60 * 60)
-            raise BadStateException("Hour is over, restart!")
+            continue
 
         if "}" not in response:
-            # stop the session if it's not completing the JSON
-            raise BadStateException("Not returning full JSON.")
+            # retry the session if it's not completing the JSON
+            print("Broken JSON response, skipping for now")
+            break
 
         # we have a good response here
         break
@@ -161,35 +159,35 @@ def upsert_result(results, result):
     results.append(result)
 
 
-def run(documents, schema, outfile, headless=False, continue_at=None,
-        continue_last=False):
+def run(documents, schema, outfile, headless=False, login=False,
+        continue_at=None, continue_last=False, browser=None):
     print("Starting ChatGPT interface...")
-    chat = ChatGPT(headless=headless)
-    if not headless:
+    chat = ChatGPT(headless=headless, browser=browser)
+    if login:
         input("Login then press enter...")
         pass
     else:
        time.sleep(5)
 
-    print("Refreshing session...")
     # TODO: Check for login prompt
     # TODO: Optionally clear all prev sessions
-    chat.page.reload()
-    # There's a memory leak somewhere in the JS. This will hopefully
-    # avoid this problem, which cases the script to freeze.
-    # chat.refresh_session()
 
     results = []
     if os.path.exists(outfile):
         with open(outfile, "r") as f:
             results = json.load(f)
 
-    already_scraped = set([r["id"] for r in results])
-    print("Already scraped", already_scraped)
+    already_scraped = set([
+        r.get("id") for r in results
+    ])
+    if already_scraped:
+        print("Already scraped", already_scraped)
 
     if continue_last:
         continue_at = max(list(already_scraped)) + 1
         print("Continuing at", continue_at)
+
+    print(len(documents), "documents to scrape")
 
     # flag so that we only sleep after the first try
     first_scrape = True
@@ -210,15 +208,7 @@ def run(documents, schema, outfile, headless=False, continue_at=None,
             time.sleep(60)
             first_scrape = False
 
-        try:
-            prompt, response = scrape_via_prompt(chat, page_text, schema)
-        except (BadStateException, TimeoutException) as e:
-            raise e
-            print("ID", pk, "Error", e)
-            print("Reloading page...")
-            chat.page.reload()
-            print("Skipping to next")
-            continue
+        prompt, response = scrape_via_prompt(chat, page_text, schema)
 
         data = None
         try:
@@ -284,5 +274,6 @@ if __name__ == "__main__":
     run(documents, schema, args.outfile,
         headless=args.headless,
         continue_at=args.continue_at,
-        continue_last=args.continue_last
+        continue_last=args.continue_last,
+        browser=args.browser,
     )

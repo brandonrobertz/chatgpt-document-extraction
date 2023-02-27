@@ -31,16 +31,21 @@ Then install ChatGPT-wrapper:
 cd chatgpt-wrapper/
 pip install .
 cd ..
+playwright install
 ```
 
-You need to login, so run the script for the first time *without* `--headless`. Subsequent runs will keep track of your logged in session, so you can use `--headless` after logging in.
+You need to login, so run the script for the first time *with* `--login` and *without* `--headless`. Subsequent runs will keep track of your logged in session, so you can use `--headless` after logging in. If you notice that you've been logged out, you can run with `--login` again.
+
+```
+./gpt-extract.py --login
+```
 
 ## Extraction
 
 Once you're set up, you can extract structured data, 
 
 ```
-./gpt-extract.py --input-type infile.txt schema.json output.json
+./gpt-extract.py --headless --input-type infile.txt schema.json output.json
 ```
 
 ### Input data spec
