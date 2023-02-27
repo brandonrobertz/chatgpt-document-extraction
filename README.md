@@ -25,7 +25,7 @@ If you've already cloned the repo you can get and/or update the submodule with t
 git submodule update --init --recursive
 ```
 
-Then install ChatGPT-wrapper:
+Then install ChatGPT-wrapper and [set up Playwright][playwright-setup]:
 
 ```
 cd chatgpt-wrapper/
@@ -97,3 +97,6 @@ It can be helpful to name the fields in descriptive ways that ChatGPT can use to
 
 [wrapper-fork]: https://github.com/brandonrobertz/chatgpt-wrapper
     "ChatGPT Wrapper - forked version with modifications"
+
+[playwright-setup]: https://playwright.dev/python/docs/library
+    "Playwright - Getting Started"
