@@ -34,10 +34,10 @@ cd ..
 playwright install
 ```
 
-You need to login, so run the script for the first time *with* `--login` and *without* `--headless`. Subsequent runs will keep track of your logged in session, so you can use `--headless` after logging in. If you notice that you've been logged out, you can run with `--login` again.
+You need to login, so run the following command and log into ChatGPT:
 
 ```
-./gpt-extract.py --login
+chatgpt install
 ```
 
 ## Extraction

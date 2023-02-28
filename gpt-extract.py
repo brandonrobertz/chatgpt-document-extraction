@@ -45,11 +45,6 @@ parser.add_argument(
     help='Hide the browser'
 )
 parser.add_argument(
-    '--login', 
-    action='store_true',
-    help='Wait for us to login manually. You need to run this the first time'
-)
-parser.add_argument(
     '--continue-at',
     help='Continue extration at this document index'
 )
@@ -135,14 +130,12 @@ def scrape_via_prompt(chat, page_text, schema):
 
         if "}" not in response:
             # retry the session if it's not completing the JSON
-            print("Broken JSON response, skipping for now")
-            break
+            print("Broken JSON response, sleeping then retrying")
+            time.sleep(20)
+            continue
 
         # we have a good response here
         break
-
-    if response is None:
-        print("Skipping page due to blank response")
 
     return prompt, response
 
@@ -159,15 +152,11 @@ def upsert_result(results, result):
     results.append(result)
 
 
-def run(documents, schema, outfile, headless=False, login=False,
+def run(documents, schema, outfile, headless=False,
         continue_at=None, continue_last=False, browser=None):
     print("Starting ChatGPT interface...")
     chat = ChatGPT(headless=headless, browser=browser)
-    if login:
-        input("Login then press enter...")
-        pass
-    else:
-       time.sleep(5)
+    time.sleep(5)
 
     # TODO: Check for login prompt
     # TODO: Optionally clear all prev sessions
@@ -209,6 +198,11 @@ def run(documents, schema, outfile, headless=False, login=False,
             first_scrape = False
 
         prompt, response = scrape_via_prompt(chat, page_text, schema)
+        first_scrape = False
+
+        if response is None:
+            print("Skipping page due to blank response")
+            continue
 
         data = None
         try:
