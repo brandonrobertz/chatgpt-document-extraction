@@ -216,6 +216,7 @@ def run(documents, schema, outfile, headless=False, login=False,
         except Exception as e:
             print("Bad result on ID", pk)
             print("Parse error:", e)
+            continue
 
         result = {
             "id": pk,
