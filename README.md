@@ -4,11 +4,33 @@ This is a proof-of-concept for using ChatGPT to extract structured data from mes
 
 It works by asking ChatGPT to turn text documents (found in an input JSON file or a text file) into a JSON record that matches a given JSON Schema specification.
 
+If your input data is a text file where each line is a document, you can use the script like this:
+
 ```
-./gpt-extract.py --input-type infile.txt schema.json output.json
+./gpt-extract.py --input-type text infile.txt schema.json output.json
 ```
 
-Would extract each line in infile, using schema.json and write extracted data to output.json.
+This would extract each line in infile, using schema.json and write extracted data to output.json. You can find an example JSON schema down below in the "JSON schema file" section.
+
+If your input data is JSON, you'll need to tell the script how to find the documents (and, optionally how to find a unique ID for each recod). The only kind of supported JSON is a list of JSON objects. Your JSON input data should look something like this:
+
+```
+[{
+  "id": 1
+  "doc": "My text here..."
+}, {
+  "id": 2,
+  "doc": "Another record..."
+}]
+```
+
+You can run the script like this:
+
+```
+./gpt-extract.py --input-type json --keydoc doc --keyid id infile.json schema.json output.json
+```
+
+Note that the output file (`output.json`), if it exists, needs to be valid JSON (not a blank file) as the script will attempt to load it and continue where the extraction left off.
 
 ## Setup
 
