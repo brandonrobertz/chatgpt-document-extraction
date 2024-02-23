@@ -1,4 +1,6 @@
-# GPT Document Extraction
+# GPT Document Extraction (DEPRECATED)
+
+*NOTE:* The underlying strategy here (scraping ChatGPT) no longer works. [There's an LLM version of this tool available here.](https://github.com/brandonrobertz/llm-document-extraction)
 
 This is a proof-of-concept for using ChatGPT to extract structured data from messy text documents like scanned/OCR'd PDFs and difficult forms.
 
